@@ -112,8 +112,9 @@
           let id = cus.id;
           let name = cus.name;
           let address = cus.address;
+          let salary = cus.salary;
 
-          let row = "<tr><td>" + id + "</td><td>" + name + "</td><td>" + address + "</td></tr>";
+          let row = "<tr><td>" + id + "</td><td>" + name + "</td><td>" + address + "</td><td>" + salary + "</td></tr>";
           $("#tblCustomer").append(row);
         }
       },
@@ -164,6 +165,7 @@
     let id = $("#txtCustomerID").val();
     let name = $("#txtCustomerName").val();
     let address = $("#txtCustomerAddress").val();
+    let salary = $("#txtCustomerSalary").val();
 
     $.ajax({
       url:'http://localhost:8080/backEnd/pages/customer',
@@ -172,7 +174,8 @@
       data:JSON.stringify({
         "id":id,
         "name":name,
-        "address":address
+        "address":address,
+        "salary":salary
       }),
       success:function (resp){
         alert(resp.message);

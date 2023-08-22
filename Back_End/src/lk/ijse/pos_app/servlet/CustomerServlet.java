@@ -16,7 +16,7 @@ public class CustomerServlet extends HttpServlet {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("select * from customer");
+            PreparedStatement pstm = connection.prepareStatement("select * from customer2");
             ResultSet rst = pstm.executeQuery();
             resp.addHeader("Access-Control-Allow-Origin","*");
 
@@ -25,11 +25,13 @@ public class CustomerServlet extends HttpServlet {
                 String id = rst.getString(1);
                 String name = rst.getString(2);
                 String address = rst.getString(3);
+                String salary = String.valueOf(rst.getDouble(4));
 
                 JsonObjectBuilder customerObject = Json.createObjectBuilder();
                 customerObject.add("id",id);
                 customerObject.add("name",name);
                 customerObject.add("address",address);
+                customerObject.add("salary",salary);
 
                 allCustomers.add(customerObject.build());
             }
@@ -48,6 +50,7 @@ public class CustomerServlet extends HttpServlet {
         String cusID = req.getParameter("cusID");
         String cusName = req.getParameter("cusName");
         String cusAddress = req.getParameter("cusAddress");
+        double cusSalary = Double.parseDouble(req.getParameter("cusSalary"));
 
         resp.addHeader("Content-Type", "application/json");
         resp.addHeader("Access-Control-Allow-Origin", "*");
@@ -57,10 +60,11 @@ public class CustomerServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
 
-            PreparedStatement pstm = connection.prepareStatement("insert into customer values(?,?,?)");
+            PreparedStatement pstm = connection.prepareStatement("insert into customer2 values(?,?,?,?)");
             pstm.setObject(1, cusID);
             pstm.setObject(2, cusName);
             pstm.setObject(3, cusAddress);
+            pstm.setObject(4, cusSalary);
             if (pstm.executeUpdate() > 0) {
 
                 JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
@@ -86,6 +90,7 @@ public class CustomerServlet extends HttpServlet {
         String id = customerObject.getString("id");
         String name = customerObject.getString("name");
         String address = customerObject.getString("address");
+        double salary = Double.parseDouble(customerObject.getString("salary"));
 
         resp.addHeader("Access-Control-Allow-Origin","*");
 
@@ -93,10 +98,11 @@ public class CustomerServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
 
-            PreparedStatement pstm = connection.prepareStatement("update customer set name=?,address=? where id=?");
-            pstm.setObject(3,id);
+            PreparedStatement pstm = connection.prepareStatement("update customer2 set name=?,address=?,salary=? where id=?");
+            pstm.setObject(4,id);
             pstm.setObject(1,name);
             pstm.setObject(2,address);
+            pstm.setObject(3,salary);
             if (pstm.executeUpdate() > 0){
                 JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
                 objectBuilder.add("state", "OK");
@@ -125,7 +131,7 @@ public class CustomerServlet extends HttpServlet {
 
             resp.addHeader("Access-Control-Allow-Origin","*");
 
-            PreparedStatement pstm = connection.prepareStatement("delete from customer where id=?");
+            PreparedStatement pstm = connection.prepareStatement("delete from customer2 where id=?");
             pstm.setObject(1, id);
             if (pstm.executeUpdate() > 0) {
 
