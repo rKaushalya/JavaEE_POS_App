@@ -177,7 +177,7 @@
         "salary":salary
       }),
       success:function (resp){
-        alert("Update Success..");
+        alert(resp.message);
         getAllCustomers();
       },
       error:function(error){
