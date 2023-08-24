@@ -1,5 +1,7 @@
 package lk.ijse.pos_app.servlet;
 
+import lk.ijse.pos_app.dto.CustomerDTO;
+
 import javax.json.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -25,13 +27,15 @@ public class CustomerServlet extends HttpServlet {
                 String id = rst.getString(1);
                 String name = rst.getString(2);
                 String address = rst.getString(3);
-                String salary = String.valueOf(rst.getDouble(4));
+                double salary = rst.getDouble(4);
+
+                CustomerDTO customerDTO = new CustomerDTO(id,name,address,salary);
 
                 JsonObjectBuilder customerObject = Json.createObjectBuilder();
-                customerObject.add("id",id);
-                customerObject.add("name",name);
-                customerObject.add("address",address);
-                customerObject.add("salary",salary);
+                customerObject.add("id",customerDTO.getId());
+                customerObject.add("name",customerDTO.getName());
+                customerObject.add("address",customerDTO.getAddress());
+                customerObject.add("salary",String.valueOf(customerDTO.getSalary()));
 
                 allCustomers.add(customerObject.build());
             }
@@ -52,6 +56,8 @@ public class CustomerServlet extends HttpServlet {
         String cusAddress = req.getParameter("cusAddress");
         double cusSalary = Double.parseDouble(req.getParameter("cusSalary"));
 
+        CustomerDTO customerDTO = new CustomerDTO(cusID,cusName,cusAddress,cusSalary);
+
         resp.addHeader("Content-Type", "application/json");
         resp.addHeader("Access-Control-Allow-Origin", "*");
 
@@ -61,10 +67,10 @@ public class CustomerServlet extends HttpServlet {
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
 
             PreparedStatement pstm = connection.prepareStatement("insert into customer2 values(?,?,?,?)");
-            pstm.setObject(1, cusID);
-            pstm.setObject(2, cusName);
-            pstm.setObject(3, cusAddress);
-            pstm.setObject(4, cusSalary);
+            pstm.setObject(1, customerDTO.getId());
+            pstm.setObject(2, customerDTO.getName());
+            pstm.setObject(3, customerDTO.getAddress());
+            pstm.setObject(4, customerDTO.getSalary());
             if (pstm.executeUpdate() > 0) {
 
                 JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
@@ -87,10 +93,12 @@ public class CustomerServlet extends HttpServlet {
         JsonReader reader = Json.createReader(req.getReader());
         JsonObject customerObject = reader.readObject();
 
-        String id = customerObject.getString("id");
-        String name = customerObject.getString("name");
-        String address = customerObject.getString("address");
-        double salary = Double.parseDouble(customerObject.getString("salary"));
+        String cusId = customerObject.getString("id");
+        String cusName = customerObject.getString("name");
+        String cusAddress = customerObject.getString("address");
+        double cusSalary = Double.parseDouble(customerObject.getString("salary"));
+
+        CustomerDTO customerDTO = new CustomerDTO(cusId,cusName,cusAddress,cusSalary);
 
         resp.addHeader("Access-Control-Allow-Origin","*");
 
@@ -99,14 +107,14 @@ public class CustomerServlet extends HttpServlet {
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
 
             PreparedStatement pstm = connection.prepareStatement("update customer2 set name=?,address=?,salary=? where id=?");
-            pstm.setObject(4,id);
-            pstm.setObject(1,name);
-            pstm.setObject(2,address);
-            pstm.setObject(3,salary);
+            pstm.setObject(4,customerDTO.getId());
+            pstm.setObject(1,customerDTO.getName());
+            pstm.setObject(2,customerDTO.getAddress());
+            pstm.setObject(3,customerDTO.getSalary());
             if (pstm.executeUpdate() > 0){
                 JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
                 objectBuilder.add("state", "OK");
-                objectBuilder.add("message", "Successfully Upadated.....");
+                objectBuilder.add("message", "Successfully Updated.....");
                 objectBuilder.add("Data", " ");
                 resp.getWriter().print(objectBuilder.build());
             }
