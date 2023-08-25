@@ -55,11 +55,11 @@
         </div>
       </form>
       <div class="btn-group">
-        <button form="itemForm" formmethod="post"  formaction="item?option=add" class="btn btn-primary" id="btnItem">Add Item</button>
-        <button form="itemForm" formmethod="post"  formaction="item?option=delete" class="btn btn-danger" id="btnItemDelete">Remove</button>
-        <button form="itemForm" formmethod="post"  formaction="item?option=update" class="btn btn-warning" id="btnItemUpdate">Update</button>
-        <button form="itemForm" formaction="item" class="btn btn-success">Get All</button>
-        <button form="itemForm" type="reset" class="btn btn-danger" id="btn-clear">Clear All</button>
+        <button type="button" class="btn btn-primary" id="btnItem">Add Item</button>
+        <button type="button" class="btn btn-danger" id="btnItemDelete">Remove</button>
+        <button type="button" class="btn btn-warning" id="btnItemUpdate">Update</button>
+        <button type="button" class="btn btn-success" id="btnGetAll">Get All</button>
+        <button type="button" class="btn btn-danger" id="btn-clear">Clear All</button>
       </div>
 
     </div>
@@ -81,6 +81,43 @@
   </section>
 
 </main>
+
+<script src="../assets/js/jquery-3.6.1.min.js"></script>
+<script src="../assets/js/bootstrap.min.js"></script>
+
+<script>
+  getAllItem();
+
+  $("#btnGetAll").click(function (){
+    getAllItem();
+  });
+
+  function getAllItem() {
+    $("#tblItem").empty();
+
+    $.ajax({
+      url: 'http://localhost:8080/backEnd/pages/item',
+      dataType: "json",
+
+      success: function (items) {
+        for (let i in items) {
+          let item = items[i];
+          let code = item.code;
+          let name = item.name;
+          let qty = item.qty;
+          let price = item.price;
+
+          let row = "<tr><td>" + code + "</td><td>" + name + "</td><td>" + qty + "</td><td>" + price + "</td></tr>";
+          $("#tblItem").append(row);
+        }
+      },
+      error: function (error) {
+        console.log(error);
+      }
+    });
+  }
+
+</script>
 
 </body>
 </html>
