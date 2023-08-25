@@ -51,7 +51,37 @@ public class ItemServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String code = req.getParameter("code");
+        String name = req.getParameter("description");
+        int qty = Integer.parseInt(req.getParameter("qty"));
+        double price = Double.parseDouble(req.getParameter("unitPrice"));
 
+        ItemDTO itemDTO = new ItemDTO(code,name,qty,price);
+
+        resp.addHeader("Content-Type", "application/json");
+        resp.addHeader("Access-Control-Allow-Origin", "*");
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
+
+            PreparedStatement pstm = connection.prepareStatement("INSERT INTO item VALUES (?,?,?,?)");
+            pstm.setObject(1,itemDTO.getCode());
+            pstm.setObject(2,itemDTO.getName());
+            pstm.setObject(3,itemDTO.getQty());
+            pstm.setObject(4,itemDTO.getPrice());
+
+            if (pstm.executeUpdate() > 0){
+                JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+                objectBuilder.add("state", "OK");
+                objectBuilder.add("message", "Successfully Added.....");
+                objectBuilder.add("Data", " ");
+                resp.getWriter().print(objectBuilder.build());
+            }
+
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

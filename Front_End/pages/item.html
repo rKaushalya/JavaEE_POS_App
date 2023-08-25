@@ -117,6 +117,23 @@
     });
   }
 
+  $("#btnItem").click(function (){
+    let formData = $("#itemForm").serialize();
+    $.ajax({
+      url: 'http://localhost:8080/backEnd/pages/item',
+      method: "post",
+      data: formData,
+      success: function (res){
+        alert(res.message);
+        getAllItem();
+      },
+      error: function (error){
+        console.log(error.message);
+        alert(error.message);
+      }
+    });
+  });
+
 </script>
 
 </body>
