@@ -120,6 +120,31 @@ public class ItemServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        JsonReader reader = Json.createReader(req.getReader());
+        JsonObject jsonObject = reader.readObject();
+
+        String code = jsonObject.getString("code");
+
+        resp.addHeader("Access-Control-Allow-Origin","*");
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
+
+            PreparedStatement pst = connection.prepareStatement("DELETE FROM item WHERE code=?");
+            pst.setObject(1,code);
+
+            if (pst.executeUpdate() > 0){
+                JsonObjectBuilder response = Json.createObjectBuilder();
+                response.add("state","OK");
+                response.add("message","Successfully Added.!");
+                response.add("Data","");
+                resp.getWriter().print(response.build());
+            }
+
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
 
     }
 
