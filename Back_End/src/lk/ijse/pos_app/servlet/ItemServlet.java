@@ -2,9 +2,7 @@ package lk.ijse.pos_app.servlet;
 
 import lk.ijse.pos_app.dto.ItemDTO;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObjectBuilder;
+import javax.json.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -86,7 +84,38 @@ public class ItemServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        JsonReader reader = Json.createReader(req.getReader());
+        JsonObject itemObject = reader.readObject();
 
+        String code = itemObject.getString("code");
+        String name = itemObject.getString("name");
+        int qty = Integer.parseInt(itemObject.getString("qty"));
+        double price = Double.parseDouble(itemObject.getString("price"));
+
+        resp.addHeader("Access-Control-Allow-Origin","*");
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
+
+            ItemDTO itemDTO = new ItemDTO(code,name,qty,price);
+
+            PreparedStatement pstm = connection.prepareStatement("UPDATE item SET name=?, qty=?, price=? WHERE code=?");
+            pstm.setObject(4,itemDTO.getCode());
+            pstm.setObject(1,itemDTO.getName());
+            pstm.setObject(2,itemDTO.getQty());
+            pstm.setObject(3,itemDTO.getPrice());
+
+            if (pstm.executeUpdate() > 0){
+                JsonObjectBuilder response = Json.createObjectBuilder();
+                response.add("state","OK");
+                response.add("message","Successfully Added.!");
+                response.add("Data","");
+                resp.getWriter().print(response.build());
+            }
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -96,6 +125,8 @@ public class ItemServlet extends HttpServlet {
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
+        resp.addHeader("Access-Control-Allow-Origin","*");
+        resp.addHeader("Access-Control-Allow-Methods","PUT,DELETE");
+        resp.addHeader("Access-Control-Allow-Headers","content-type");
     }
 }

@@ -134,6 +134,32 @@
     });
   });
 
+  $("#btnItemUpdate").click(function (){
+    let code = $("#itemCode").val();
+    let name = $("#itemName").val();
+    let qty = $("#itemQty").val();
+    let price = $("#itemPrice").val();
+
+    $.ajax({
+      url: 'http://localhost:8080/backEnd/pages/item',
+      contentType: "application/json",
+      method: "put",
+      data: JSON.stringify({
+        "code" : code,
+        "name" : name,
+        "qty" : qty,
+        "price" : price
+      }),
+      success: function (res){
+        alert(res.message);
+        getAllItem();
+      },
+      error: function (error) {
+        console.log(error);
+      }
+    });
+  });
+
 </script>
 
 </body>
