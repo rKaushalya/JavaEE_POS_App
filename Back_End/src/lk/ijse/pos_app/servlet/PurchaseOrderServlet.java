@@ -84,9 +84,9 @@ public class PurchaseOrderServlet extends HttpServlet {
             pstm.setObject(2,orderDTO.getOrderQty());
             pstm.setObject(3,orderDTO.getCash());
             pstm.setObject(4,orderDTO.getBalance());
-            pstm.setObject(5,orderDTO.getDate());
-            pstm.setObject(6,orderDTO.getCusId());
-            pstm.setObject(7,orderDTO.getItemCode());
+            pstm.setObject(7,orderDTO.getDate());
+            pstm.setObject(5,orderDTO.getCusId());
+            pstm.setObject(6,orderDTO.getItemCode());
 
             if (pstm.executeUpdate() > 0){
                 PreparedStatement preparedStatement = connection.prepareStatement("SELECT qty FROM item WHERE code=?");
@@ -102,6 +102,13 @@ public class PurchaseOrderServlet extends HttpServlet {
 
                 if (preparedStatement1.executeUpdate() > 0){
                     connection.commit();
+
+                    JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+                    objectBuilder.add("state", "OK");
+                    objectBuilder.add("message", "Successfully Order Added.....");
+                    objectBuilder.add("Data", " ");
+                    resp.getWriter().print(objectBuilder.build());
+
                     connection.setAutoCommit(true);
                     return;
                 }

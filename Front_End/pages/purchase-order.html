@@ -368,6 +368,37 @@
     $("#subtotal").text(subTotal.toFixed(2));
   });
 
+  $("#btnSubmitOrder").click(function () {
+    let oId = $("#txtOrderID").val();
+    let qty = $("#txtQty").val();
+    let cash = $("#txtCash").val();
+    let balance = $("#txtBalance").val();
+    let date = $("#txtDate").val();
+    let cusId = $("#orderCustomerID").val();
+    let code = $("#txtItemCode").val();
+
+    $.ajax({
+      url: 'http://localhost:8080/backEnd/pages/purchase-order',
+      contentType: "application/json",
+      method: "post",
+      data: JSON.stringify({
+        "oId" : oId,
+        "orderQty" : qty,
+        "cash" : cash,
+        "balance" : balance,
+        "date" : date,
+        "cusId" : cusId,
+        "itemCode" : code
+      }),
+      success: function (res) {
+        alert(res.message);
+      },
+      error: function (error) {
+        console.log(error);
+      }
+    });
+  });
+
 </script>
 
 </body>
