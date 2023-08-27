@@ -2,6 +2,7 @@ package lk.ijse.pos_app.servlet;
 
 import lk.ijse.pos_app.dto.CustomerDTO;
 import lk.ijse.pos_app.dto.ItemDTO;
+import lk.ijse.pos_app.dto.PurchaseOrderDTO;
 
 import javax.json.*;
 import javax.servlet.ServletException;
@@ -57,7 +58,61 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.addHeader("Access-Control-Allow-Origin","*");
 
+        JsonReader reader = Json.createReader(req.getReader());
+        JsonObject jsonObject = reader.readObject();
+
+        String oId = jsonObject.getString("oId");
+        int qty = Integer.parseInt(jsonObject.getString("orderQty"));
+        double cash = Double.parseDouble(jsonObject.getString("cash"));
+        double balance = Double.parseDouble(jsonObject.getString("balance"));
+        Date date = Date.valueOf(jsonObject.getString("date"));
+        String cusId = jsonObject.getString("cusId");
+        String itemCode = jsonObject.getString("itemCode");
+
+        PurchaseOrderDTO orderDTO = new PurchaseOrderDTO(oId,qty,cash,balance,date,cusId,itemCode);
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
+
+            connection.setAutoCommit(false);
+
+            PreparedStatement pstm = connection.prepareStatement("INSERT INTO orderDetails VALUES (?,?,?,?,?,?,?)");
+            pstm.setObject(1,orderDTO.getoId());
+            pstm.setObject(2,orderDTO.getOrderQty());
+            pstm.setObject(3,orderDTO.getCash());
+            pstm.setObject(4,orderDTO.getBalance());
+            pstm.setObject(5,orderDTO.getDate());
+            pstm.setObject(6,orderDTO.getCusId());
+            pstm.setObject(7,orderDTO.getItemCode());
+
+            if (pstm.executeUpdate() > 0){
+                PreparedStatement preparedStatement = connection.prepareStatement("SELECT qty FROM item WHERE code=?");
+                preparedStatement.setObject(1,orderDTO.getItemCode());
+                ResultSet resultSet = preparedStatement.executeQuery();
+
+                int qtyOnHand = resultSet.getInt(1);
+                int newValue = qtyOnHand-orderDTO.getOrderQty();
+
+                PreparedStatement preparedStatement1 = connection.prepareStatement("UPDATE item SET qty=? WHERE code=?");
+                preparedStatement1.setObject(1,newValue);
+                preparedStatement1.setObject(2,orderDTO.getItemCode());
+
+                if (preparedStatement1.executeUpdate() > 0){
+                    connection.commit();
+                    connection.setAutoCommit(true);
+                    return;
+                }
+            }
+
+            connection.rollback();
+            connection.setAutoCommit(true);
+
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

@@ -99,7 +99,7 @@
           <div class="card">
             <div class="card-header bg-primary  font-weight-bolder">Item Select</div>
             <div class="card-body">
-              <form>
+              <form id="itemForm">
                 <div class="row">
                   <div class="col-6">
                     <div class="form-group">
@@ -340,6 +340,34 @@
       }
     });
   });
+
+  $("#btnAddToTable").click(function () {
+    let code = $("#txtItemCode").val();
+    let desc = $("#txtItemDescription").val();
+    let price = $("#txtItemPrice").val();
+    let qty = $("#txtQty").val();
+    let total = price * qty;
+
+    let row = "<tr><td>"+code+"</td><td>"+desc+"</td><td>"+price+"</td><td>"+qty+"</td><td>"+total+"</td></tr>";
+    $("#orderTable").append(row);
+
+    let val1 = parseFloat($("#total").text());
+    $("#total").text(val1+total);
+  });
+
+  $("#txtDiscount").click(function () {
+    let total = parseFloat($("#total").text());
+    let dis = parseFloat($("#txtDiscount").val());
+
+    let discount = total/100;
+    let real = discount * dis;
+
+    let sub = parseFloat($("#subtotal").text());
+    let subTotal = total-real;
+
+    $("#subtotal").text(subTotal.toFixed(2));
+  });
+
 </script>
 
 </body>
