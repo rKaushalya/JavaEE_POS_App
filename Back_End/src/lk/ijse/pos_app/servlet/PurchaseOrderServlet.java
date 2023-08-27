@@ -103,13 +103,49 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.addHeader("Access-Control-Allow-Origin","*");
 
+        JsonReader reader = Json.createReader(req.getReader());
+        JsonObject jsonObject = reader.readObject();
+
+        String code = jsonObject.getString("code");
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
+
+            ItemDTO itemDTO = new ItemDTO();
+            itemDTO.setCode(code);
+
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM item WHERE code=?");
+            pstm.setObject(1,itemDTO.getCode());
+
+            ResultSet resultSet = pstm.executeQuery();
+
+            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+
+            while (resultSet.next()){
+                String code1 = resultSet.getString(1);
+                String name = resultSet.getString(2);
+                String qty = String.valueOf(resultSet.getInt(3));
+                String price = String.valueOf(resultSet.getDouble(4));
+
+                objectBuilder.add("code",code1);
+                objectBuilder.add("name",name);
+                objectBuilder.add("qty",qty);
+                objectBuilder.add("price",price);
+            }
+
+            resp.getWriter().print(objectBuilder.build());
+
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.addHeader("Access-Control-Allow-Origin","*");
-        resp.addHeader("Access-Control-Allow-Methods","PUT");
+        resp.addHeader("Access-Control-Allow-Methods","PUT, DELETE");
         resp.addHeader("Access-Control-Allow-Headers","content-type");
     }
 }

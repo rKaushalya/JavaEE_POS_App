@@ -312,6 +312,34 @@
       }
     });
   });
+
+  $("#selectItemCode").click(function () {
+    let val = $("#selectItemCode").val();
+
+    $.ajax({
+      url: 'http://localhost:8080/backEnd/pages/purchase-order',
+      contentType: "application/json",
+      method: "delete",
+      dataType: "json",
+      data: JSON.stringify({
+        "code" : val
+      }),
+      success: function (item) {
+        let code = item.code;
+        let name = item.name;
+        let qty = item.qty;
+        let price = item.price;
+
+        $("#txtItemCode").val(code);
+        $("#txtItemDescription").val(name);
+        $("#txtQTYOnHand").val(qty);
+        $("#txtItemPrice").val(price);
+      },
+      error: function (error) {
+        console.log(error);
+      }
+    });
+  });
 </script>
 
 </body>
