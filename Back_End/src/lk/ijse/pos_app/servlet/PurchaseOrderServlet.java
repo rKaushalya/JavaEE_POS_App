@@ -1,17 +1,60 @@
 package lk.ijse.pos_app.servlet;
 
+import lk.ijse.pos_app.dto.CustomerDTO;
+import lk.ijse.pos_app.dto.ItemDTO;
+
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.*;
 
-@WebServlet(urlPatterns = "")
+@WebServlet(urlPatterns = "/pages/purchase-order")
 public class PurchaseOrderServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
 
+            PreparedStatement pstm = connection.prepareStatement("SELECT code FROM item");
+            ResultSet resultSet = pstm.executeQuery();
+
+            resp.addHeader("Access-Control-Allow-Origin","*");
+
+            JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+            ItemDTO itemDTO = new ItemDTO();
+
+            while (resultSet.next()){
+                itemDTO.setCode(resultSet.getString(1));
+                JsonObjectBuilder code = Json.createObjectBuilder();
+                code.add("code",itemDTO.getCode());
+
+                arrayBuilder.add(code.build());
+            }
+
+            PreparedStatement cusPstm = connection.prepareStatement("SELECT id FROM customer2");
+            ResultSet cusDetails = cusPstm.executeQuery();
+
+            CustomerDTO customerDTO = new CustomerDTO();
+            while (cusDetails.next()){
+                customerDTO.setId(cusDetails.getString(1));
+                JsonObjectBuilder customer = Json.createObjectBuilder();
+                customer.add("id",customerDTO.getId());
+
+                arrayBuilder.add(customer.build());
+            }
+
+            resp.getWriter().print(arrayBuilder.build());
+
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
