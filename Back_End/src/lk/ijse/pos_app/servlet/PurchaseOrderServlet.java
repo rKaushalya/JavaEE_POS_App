@@ -3,9 +3,7 @@ package lk.ijse.pos_app.servlet;
 import lk.ijse.pos_app.dto.CustomerDTO;
 import lk.ijse.pos_app.dto.ItemDTO;
 
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObjectBuilder;
+import javax.json.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -64,7 +62,43 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.addHeader("Access-Control-Allow-Origin","*");
 
+        JsonReader reader = Json.createReader(req.getReader());
+        JsonObject jsonObject = reader.readObject();
+
+        String id = jsonObject.getString("id");
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
+
+            CustomerDTO customerDTO = new CustomerDTO();
+            customerDTO.setId(id);
+
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM customer2 WHERE id=?");
+            pstm.setObject(1,customerDTO.getId());
+
+            ResultSet resultSet = pstm.executeQuery();
+
+            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+
+            while (resultSet.next()){
+                String id1 = resultSet.getString(1);
+                String name = resultSet.getString(2);
+                String address = resultSet.getString(3);
+                String salary = String.valueOf(resultSet.getDouble(4));
+
+                objectBuilder.add("id",id1);
+                objectBuilder.add("name",name);
+                objectBuilder.add("address",address);
+                objectBuilder.add("salary",salary);
+            }
+
+            resp.getWriter().print(objectBuilder.build());
+
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -74,6 +108,8 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
+        resp.addHeader("Access-Control-Allow-Origin","*");
+        resp.addHeader("Access-Control-Allow-Methods","PUT");
+        resp.addHeader("Access-Control-Allow-Headers","content-type");
     }
 }
