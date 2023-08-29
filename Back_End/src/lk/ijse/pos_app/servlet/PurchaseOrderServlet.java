@@ -24,27 +24,27 @@ public class PurchaseOrderServlet extends HttpServlet {
             PreparedStatement pstm = connection.prepareStatement("SELECT code FROM item");
             ResultSet resultSet = pstm.executeQuery();
 
-            resp.addHeader("Access-Control-Allow-Origin","*");
+            resp.addHeader("Access-Control-Allow-Origin", "*");
 
             JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
             ItemDTO itemDTO = new ItemDTO();
 
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 itemDTO.setCode(resultSet.getString(1));
                 JsonObjectBuilder code = Json.createObjectBuilder();
-                code.add("code",itemDTO.getCode());
+                code.add("code", itemDTO.getCode());
 
                 arrayBuilder.add(code.build());
             }
 
-            PreparedStatement cusPstm = connection.prepareStatement("SELECT id FROM customer2");
+            PreparedStatement cusPstm = connection.prepareStatement("SELECT id FROM customer");
             ResultSet cusDetails = cusPstm.executeQuery();
 
             CustomerDTO customerDTO = new CustomerDTO();
-            while (cusDetails.next()){
+            while (cusDetails.next()) {
                 customerDTO.setId(cusDetails.getString(1));
                 JsonObjectBuilder customer = Json.createObjectBuilder();
-                customer.add("id",customerDTO.getId());
+                customer.add("id", customerDTO.getId());
 
                 arrayBuilder.add(customer.build());
             }
@@ -58,20 +58,18 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.addHeader("Access-Control-Allow-Origin","*");
+        resp.addHeader("Access-Control-Allow-Origin", "*");
 
         JsonReader reader = Json.createReader(req.getReader());
         JsonObject jsonObject = reader.readObject();
 
         String oId = jsonObject.getString("oId");
-        int qty = Integer.parseInt(jsonObject.getString("orderQty"));
         double cash = Double.parseDouble(jsonObject.getString("cash"));
         double balance = Double.parseDouble(jsonObject.getString("balance"));
         Date date = Date.valueOf(jsonObject.getString("date"));
         String cusId = jsonObject.getString("cusId");
-        String itemCode = jsonObject.getString("itemCode");
 
-        PurchaseOrderDTO orderDTO = new PurchaseOrderDTO(oId,qty,cash,balance,date,cusId,itemCode);
+        PurchaseOrderDTO orderDTO = new PurchaseOrderDTO(oId, cash, balance, date, cusId);
 
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -79,44 +77,67 @@ public class PurchaseOrderServlet extends HttpServlet {
 
             connection.setAutoCommit(false);
 
-            PreparedStatement pstm = connection.prepareStatement("INSERT INTO orderDetails VALUES (?,?,?,?,?,?,?)");
-            pstm.setObject(1,orderDTO.getoId());
-            pstm.setObject(2,orderDTO.getOrderQty());
-            pstm.setObject(3,orderDTO.getCash());
-            pstm.setObject(4,orderDTO.getBalance());
-            pstm.setObject(7,orderDTO.getDate());
-            pstm.setObject(5,orderDTO.getCusId());
-            pstm.setObject(6,orderDTO.getItemCode());
+            PreparedStatement pstm = connection.prepareStatement("INSERT INTO orderDetails VALUES (?,?,?,?,?)");
+            pstm.setObject(1, orderDTO.getoId());
+            pstm.setObject(2, orderDTO.getCash());
+            pstm.setObject(3, orderDTO.getBalance());
+            pstm.setObject(4, orderDTO.getDate());
+            pstm.setObject(5, orderDTO.getCusId());
 
-            if (pstm.executeUpdate() > 0){
-                PreparedStatement preparedStatement = connection.prepareStatement("SELECT qty FROM item WHERE code=?");
-                preparedStatement.setObject(1,orderDTO.getItemCode());
-                ResultSet resultSet = preparedStatement.executeQuery();
+            if (!(pstm.executeUpdate() > 0)) {
+                connection.rollback();
+                connection.setAutoCommit(true);
+                throw new SQLException("Order Details Error");
+            } else {
 
-                int qtyOnHand = resultSet.getInt(1);
-                int newValue = qtyOnHand-orderDTO.getOrderQty();
+                JsonArray itemData = jsonObject.getJsonArray("itemData");
 
-                PreparedStatement preparedStatement1 = connection.prepareStatement("UPDATE item SET qty=? WHERE code=?");
-                preparedStatement1.setObject(1,newValue);
-                preparedStatement1.setObject(2,orderDTO.getItemCode());
+                for (JsonValue item : itemData) {
+                    JsonObject jsonObject1 = item.asJsonObject();
+                    String itemCode1 = jsonObject1.getString("code");
+                    int itemQty = Integer.parseInt(jsonObject1.getString("qty"));
 
-                if (preparedStatement1.executeUpdate() > 0){
-                    connection.commit();
+                    PreparedStatement preparedStatement = connection.prepareStatement("SELECT qty FROM item WHERE code=?");
+                    preparedStatement.setObject(1, itemCode1);
+                    ResultSet resultSet = preparedStatement.executeQuery();
 
-                    JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
-                    objectBuilder.add("state", "OK");
-                    objectBuilder.add("message", "Successfully Order Added.....");
-                    objectBuilder.add("Data", " ");
-                    resp.getWriter().print(objectBuilder.build());
+                    int newValue = 0;
+                    while (resultSet.next()) {
+                        int qtyOnHand = resultSet.getInt(1);
+                        newValue = qtyOnHand - itemQty;
+                    }
 
-                    connection.setAutoCommit(true);
-                    return;
+                    PreparedStatement preparedStatement1 = connection.prepareStatement("UPDATE item SET qty=? WHERE code=?");
+                    preparedStatement1.setObject(1, newValue);
+                    preparedStatement1.setObject(2, itemCode1);
+
+                    if (!(preparedStatement1.executeUpdate() > 0)){
+                        connection.rollback();
+                        connection.setAutoCommit(true);
+                        throw new SQLException("Item Update Error");
+                    }
+
+                    PreparedStatement preparedStatement2 = connection.prepareStatement("INSERT INTO orderItems VALUES (?,?,?)");
+                    preparedStatement2.setObject(1, orderDTO.getoId());
+                    preparedStatement2.setObject(2, itemCode1);
+                    preparedStatement2.setObject(3, itemQty);
+
+                    if (!(preparedStatement2.executeUpdate() > 0)){
+                        connection.rollback();
+                        connection.setAutoCommit(true);
+                        throw new SQLException("Order Items Error");
+                    }
                 }
+
+                connection.commit();
+                connection.setAutoCommit(true);
+
+                JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+                objectBuilder.add("state", "OK");
+                objectBuilder.add("message", "Successfully Order Added.....");
+                objectBuilder.add("Data", " ");
+                resp.getWriter().print(objectBuilder.build());
             }
-
-            connection.rollback();
-            connection.setAutoCommit(true);
-
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
@@ -124,7 +145,7 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.addHeader("Access-Control-Allow-Origin","*");
+        resp.addHeader("Access-Control-Allow-Origin", "*");
 
         JsonReader reader = Json.createReader(req.getReader());
         JsonObject jsonObject = reader.readObject();
@@ -137,23 +158,23 @@ public class PurchaseOrderServlet extends HttpServlet {
             CustomerDTO customerDTO = new CustomerDTO();
             customerDTO.setId(id);
 
-            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM customer2 WHERE id=?");
-            pstm.setObject(1,customerDTO.getId());
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM customer WHERE id=?");
+            pstm.setObject(1, customerDTO.getId());
 
             ResultSet resultSet = pstm.executeQuery();
 
             JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
 
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 String id1 = resultSet.getString(1);
                 String name = resultSet.getString(2);
                 String address = resultSet.getString(3);
                 String salary = String.valueOf(resultSet.getDouble(4));
 
-                objectBuilder.add("id",id1);
-                objectBuilder.add("name",name);
-                objectBuilder.add("address",address);
-                objectBuilder.add("salary",salary);
+                objectBuilder.add("id", id1);
+                objectBuilder.add("name", name);
+                objectBuilder.add("address", address);
+                objectBuilder.add("salary", salary);
             }
 
             resp.getWriter().print(objectBuilder.build());
@@ -165,7 +186,7 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.addHeader("Access-Control-Allow-Origin","*");
+        resp.addHeader("Access-Control-Allow-Origin", "*");
 
         JsonReader reader = Json.createReader(req.getReader());
         JsonObject jsonObject = reader.readObject();
@@ -179,22 +200,22 @@ public class PurchaseOrderServlet extends HttpServlet {
             itemDTO.setCode(code);
 
             PreparedStatement pstm = connection.prepareStatement("SELECT * FROM item WHERE code=?");
-            pstm.setObject(1,itemDTO.getCode());
+            pstm.setObject(1, itemDTO.getCode());
 
             ResultSet resultSet = pstm.executeQuery();
 
             JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
 
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 String code1 = resultSet.getString(1);
                 String name = resultSet.getString(2);
                 String qty = String.valueOf(resultSet.getInt(3));
                 String price = String.valueOf(resultSet.getDouble(4));
 
-                objectBuilder.add("code",code1);
-                objectBuilder.add("name",name);
-                objectBuilder.add("qty",qty);
-                objectBuilder.add("price",price);
+                objectBuilder.add("code", code1);
+                objectBuilder.add("name", name);
+                objectBuilder.add("qty", qty);
+                objectBuilder.add("price", price);
             }
 
             resp.getWriter().print(objectBuilder.build());
@@ -206,8 +227,8 @@ public class PurchaseOrderServlet extends HttpServlet {
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.addHeader("Access-Control-Allow-Origin","*");
-        resp.addHeader("Access-Control-Allow-Methods","PUT, DELETE");
-        resp.addHeader("Access-Control-Allow-Headers","content-type");
+        resp.addHeader("Access-Control-Allow-Origin", "*");
+        resp.addHeader("Access-Control-Allow-Methods", "PUT, DELETE");
+        resp.addHeader("Access-Control-Allow-Headers", "content-type");
     }
 }

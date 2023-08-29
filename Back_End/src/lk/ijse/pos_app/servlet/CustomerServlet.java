@@ -18,7 +18,7 @@ public class CustomerServlet extends HttpServlet {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("select * from customer2");
+            PreparedStatement pstm = connection.prepareStatement("select * from customer");
             ResultSet rst = pstm.executeQuery();
             resp.addHeader("Access-Control-Allow-Origin","*");
 
@@ -66,7 +66,7 @@ public class CustomerServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
 
-            PreparedStatement pstm = connection.prepareStatement("insert into customer2 values(?,?,?,?)");
+            PreparedStatement pstm = connection.prepareStatement("insert into customer values(?,?,?,?)");
             pstm.setObject(1, customerDTO.getId());
             pstm.setObject(2, customerDTO.getName());
             pstm.setObject(3, customerDTO.getAddress());
@@ -106,7 +106,7 @@ public class CustomerServlet extends HttpServlet {
             Class.forName("com.mysql.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajax", "root", "1234");
 
-            PreparedStatement pstm = connection.prepareStatement("update customer2 set name=?,address=?,salary=? where id=?");
+            PreparedStatement pstm = connection.prepareStatement("update customer set name=?,address=?,salary=? where id=?");
             pstm.setObject(4,customerDTO.getId());
             pstm.setObject(1,customerDTO.getName());
             pstm.setObject(2,customerDTO.getAddress());
@@ -139,7 +139,7 @@ public class CustomerServlet extends HttpServlet {
 
             resp.addHeader("Access-Control-Allow-Origin","*");
 
-            PreparedStatement pstm = connection.prepareStatement("delete from customer2 where id=?");
+            PreparedStatement pstm = connection.prepareStatement("delete from customer where id=?");
             pstm.setObject(1, id);
             if (pstm.executeUpdate() > 0) {
 

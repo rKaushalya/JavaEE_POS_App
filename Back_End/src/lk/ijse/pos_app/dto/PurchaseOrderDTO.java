@@ -14,14 +14,12 @@ public class PurchaseOrderDTO {
     public PurchaseOrderDTO() {
     }
 
-    public PurchaseOrderDTO(String oId, int orderQty, double cash, double balance, Date date, String cusId, String itemCode) {
+    public PurchaseOrderDTO(String oId, double cash, double balance, Date date, String cusId) {
         this.oId = oId;
-        this.orderQty = orderQty;
         this.cash = cash;
         this.balance = balance;
         this.date = date;
         this.cusId = cusId;
-        this.itemCode = itemCode;
     }
 
     public String getoId() {

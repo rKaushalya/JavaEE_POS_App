@@ -370,12 +370,10 @@
 
   $("#btnSubmitOrder").click(function () {
     let oId = $("#txtOrderID").val();
-    let qty = $("#txtQty").val();
     let cash = $("#txtCash").val();
     let balance = $("#txtBalance").val();
     let date = $("#txtDate").val();
     let cusId = $("#orderCustomerID").val();
-    let code = $("#txtItemCode").val();
 
     $.ajax({
       url: 'http://localhost:8080/backEnd/pages/purchase-order',
@@ -383,12 +381,11 @@
       method: "post",
       data: JSON.stringify({
         "oId" : oId,
-        "orderQty" : qty,
         "cash" : cash,
         "balance" : balance,
         "date" : date,
         "cusId" : cusId,
-        "itemCode" : code
+        "itemData" : getTableData()
       }),
       success: function (res) {
         alert(res.message);
@@ -397,6 +394,26 @@
         console.log(error);
       }
     });
+  });
+
+  function getTableData() {
+    let row = $("#orderTable").children.length;
+    let array = [];
+    for (let i = 0; i < row; i++) {
+      let itCode = $("#orderTable").children().eq(i).children(":eq(0)").text();
+      let itQty = $("#orderTable").children().eq(i).children(":eq(3)").text();
+      array.push({code: itCode, qty: itQty});
+    }
+    return array;
+  }
+
+  $("#txtBalance").click(function () {
+    let cash =parseFloat($("#txtCash").val());
+    let sub = parseFloat($("#subtotal").text());
+
+    let balance = cash - sub;
+    let demo =parseFloat($("#txtBalance").val());
+    $("#txtBalance").val(balance.toFixed(2));
   });
 
 </script>
